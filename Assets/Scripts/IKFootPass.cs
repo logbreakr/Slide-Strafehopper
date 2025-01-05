@@ -98,7 +98,7 @@ public class IKFootPass : MonoBehaviour
 
             bodyDisp = Mathf.Abs(rayLDistHit.distance - rayRDistHit.distance) / 2f;
 
-            Debug.Log(bodyDisp);
+            Debug.Log(rayLDistHit.distance + "  L      R  " + rayRDistHit.distance);
             transform.localPosition = bodyRootPos - (Vector3.up * bodyDisp);
 
         }
