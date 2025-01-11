@@ -1,5 +1,6 @@
 using UnityEditor.Animations;
 using UnityEngine;
+using UnityEngine.ProBuilder;
 
 public class CharacterAnimator : MonoBehaviour
 {
@@ -10,6 +11,8 @@ public class CharacterAnimator : MonoBehaviour
     float rotateThresh = 30;
     bool bodyCamAllign = false;
 
+    private bool isCrouching, isSliding;
+
     void Start()
     {
         parentRb = transform.parent.GetComponent<Rigidbody>();
@@ -19,13 +22,18 @@ public class CharacterAnimator : MonoBehaviour
 
     void Update()
     {
+        isCrouching = transform.parent.GetComponent<PlayerController>().isCrouching;
+        isSliding = transform.parent.GetComponent<PlayerController>().isSliding;
+
+        animator.SetBool("IsCrouching", isCrouching);
+        animator.SetBool("IsSliding", isSliding);
 
         // animation control
         Vector3 velocity = Vector3.zero;
 
         if (transform.parent.parent != null)
         {
-            velocity = parentRb.linearVelocity - transform.parent.parent.GetComponent<Rigidbody>().GetPointVelocity(transform.position);
+            velocity = parentRb.linearVelocity - transform.parent.parent.GetComponent<Rigidbody>().GetPointVelocity(transform.parent.transform.position);
         }
         else
         {
@@ -38,27 +46,44 @@ public class CharacterAnimator : MonoBehaviour
         animator.SetFloat("Speed", speed);
 
         
-        // rotation control FIX ANGLE DIFF, RETURNS SUPER HIGH NUMBERS DUE TO EULER ANGLES GOING FROM 0 TO 365 INSTEAD OF 0-180 TWICE
+        // rotation control
         Quaternion rotation = transform.rotation;
 
         Quaternion bodyRotation = Quaternion.Euler(0f, transform.rotation.eulerAngles.y, 0f);
         Quaternion CamRotation = Quaternion.Euler(0f, camTransform.rotation.eulerAngles.y, 0f);
 
-        if (Quaternion.Angle(bodyRotation, CamRotation) > rotateThresh)
+        if (!animator.GetBool("IsSliding"))
         {
-            bodyCamAllign = false;
+            if (Quaternion.Angle(bodyRotation, CamRotation) > rotateThresh)
+            {
+                bodyCamAllign = false;
 
-        } else if (Mathf.Round(transform.rotation.eulerAngles.y - camTransform.rotation.eulerAngles.y) == 0f)
-        {
-            bodyCamAllign = true;
+            } else if (Mathf.Round(transform.rotation.eulerAngles.y - camTransform.rotation.eulerAngles.y) == 0f)
+            {
+                bodyCamAllign = true;
+            }
+
+            if (!bodyCamAllign)
+            {
+                rotation = Quaternion.Euler(Vector3.up * camTransform.rotation.eulerAngles.y);
+            }
+
+            transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 5f * Time.deltaTime);
         }
 
-        if (!bodyCamAllign)
+        // sliding rotate to normal
+        if (animator.GetBool("IsSliding"))
         {
-            rotation = Quaternion.Euler(Vector3.up * camTransform.rotation.eulerAngles.y);
-        }
+            if (transform.parent.GetComponent<PlayerController>().IsGrounded(false, 0.6f))
+            {
+                Vector3 normal = transform.parent.GetComponent<PlayerController>().Normal(transform.parent.transform.position);
 
-        transform.rotation = Quaternion.Slerp(transform.rotation, rotation, 5f * Time.deltaTime);
-        
+                transform.rotation = Quaternion.LookRotation(Vector3.Cross(Quaternion.Euler(0f, 90f, 0f) * parentRb.linearVelocity.normalized, normal));
+            }
+            else
+            {
+                transform.rotation = Quaternion.LookRotation(Vector3.Cross(Quaternion.Euler(0f, 90f, 0f) * parentRb.linearVelocity.normalized, Vector3.up));
+            }
+        }
     }
 }

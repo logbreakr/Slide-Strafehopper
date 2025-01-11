@@ -29,7 +29,7 @@ public class PlayerController : MonoBehaviour
     // movement
     Rigidbody rb;
     [SerializeField]
-    private bool isSliding = false,
+    public bool isSliding = false,
         isCrouching = false;
 
 
@@ -40,6 +40,8 @@ public class PlayerController : MonoBehaviour
     [SerializeField]
     float camSmoothing = 4f;
     Vector3 camInitialOffset = Vector3.zero;
+    [SerializeField]
+    GameObject body;
 
     private float kineticFriction,
         slopeFrictionModifier = 0.15f,
@@ -286,13 +288,13 @@ public class PlayerController : MonoBehaviour
         // TODO FIX KEYBINDS WITH NEW INPUT MANAGER
 
         // enter crouch
-        if (Input.GetKeyDown(KeyCode.LeftAlt))
+        if (Input.GetKeyDown(KeyCode.C))
         {
             isCrouching = true;
             groundSpeed = crouchSpeed;
         }
         // exit crouch
-        if (Input.GetKeyUp(KeyCode.LeftAlt))
+        if (Input.GetKeyUp(KeyCode.C))
         {
             isCrouching = false;
             groundSpeed = walkSpeed;
@@ -309,7 +311,7 @@ public class PlayerController : MonoBehaviour
         minSlideThresh = Mathf.Min(crouchSpeed, slideThresh);
         
         // set sliding
-        if ((Vector3.ProjectOnPlane(rb.linearVelocity - ParentVelocity(), Normal(rb.position)).magnitude > slideThresh) && isCrouching && IsGrounded(false, groundedDist) && !isSliding)
+        if ((Vector3.ProjectOnPlane(rb.linearVelocity - ParentVelocity(), Normal(rb.position)).magnitude > slideThresh) && isCrouching && !isSliding)
         {
             isSliding = true;
 

@@ -2,8 +2,7 @@ using UnityEngine;
 using UnityEngine.ProBuilder;
 using UnityEngine.UIElements;
 
-[RequireComponent(typeof(Camera))]
-public class Camera : MonoBehaviour
+public class CamHolder : MonoBehaviour
 {
     [SerializeField]
     GameObject cameraHolder;

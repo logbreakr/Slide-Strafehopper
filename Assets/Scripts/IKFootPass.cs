@@ -1,3 +1,4 @@
+using Unity.VisualScripting;
 using UnityEngine;
 
 public class IKFootPass : MonoBehaviour
@@ -18,6 +19,23 @@ public class IKFootPass : MonoBehaviour
     [SerializeField]
     GameObject rFoot;
 
+    private Vector3 newPositionL;
+    private Vector3 newPositionR;
+
+    private Vector3 oldPositionL;
+    private Vector3 oldPositionR;
+
+    [SerializeField]
+    private float stepDistance;
+    [SerializeField]
+    private float stepSpeed;
+    [SerializeField]
+    private float stepHeight;
+
+    private float lerpL;
+    private float lerpR;
+
+
     Vector3 bodyRootPos;
     float bodyDisp;
 
@@ -29,7 +47,7 @@ public class IKFootPass : MonoBehaviour
 
     private void OnAnimatorIK(int layerIndex)
     {
-        if (animator)
+        if (!animator.GetBool("IsSliding"))
         {
             // Left Foot
             animator.SetIKPositionWeight(AvatarIKGoal.LeftFoot, animator.GetFloat("IKLeftFootWeight"));
@@ -42,6 +60,7 @@ public class IKFootPass : MonoBehaviour
             bool lFloored = Physics.Raycast(rayL, out hitL, distanceToGround + 1f, layerMask);
             if (lFloored)
             {
+
                 if (hitL.transform.tag == "walkable")
                 {
                     Vector3 forward = Vector3.ProjectOnPlane(-lFoot.transform.forward, hitL.normal);
@@ -57,51 +76,48 @@ public class IKFootPass : MonoBehaviour
                     animator.SetFloat("IKLeftFootWeight", 1f / hitL.distance);
                 }
             }
-            
-
-            // Right Foot
-            animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, animator.GetFloat("IKRightFootWeight"));
-            animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, animator.GetFloat("IKRightFootWeight"));
-            animator.SetIKHintPositionWeight(AvatarIKHint.RightKnee, 1f);
-
-            RaycastHit hitR;
-            Ray rayR = new Ray(animator.GetIKPosition(AvatarIKGoal.RightFoot) + Vector3.up, Vector3.down);
-
-            bool rFloored = Physics.Raycast(rayR, out hitR, distanceToGround + 1f, layerMask);
-            if (rFloored)
-            {
-                if (hitR.transform.tag == "walkable")
-                {
-                    Vector3 forward = Vector3.ProjectOnPlane(-rFoot.transform.forward, hitR.normal);
-                    Vector3 footPosition = hitR.point;
-                    footPosition.y += distanceToGround;
-
-                    animator.SetIKHintPosition(AvatarIKHint.RightKnee, rKnee.transform.position);
-
-                    animator.SetIKPosition(AvatarIKGoal.RightFoot, footPosition);
-
-                    animator.SetIKRotation(AvatarIKGoal.RightFoot, Quaternion.LookRotation(forward, hitR.normal));
-
-                    animator.SetFloat("IKRightFootWeight", 1f / hitR.distance);
-                }
-            }
-            // FIX, current has a ray for each foot starting at a fixed y pos to get the ground distance at each foot
-
-            Ray rayLDist = new Ray(new Vector3 (lFoot.transform.position.x, 1f, lFoot.transform.position.z), Vector3.down);
-            Ray rayRDist = new Ray(new Vector3(rFoot.transform.position.x, 1f, rFoot.transform.position.z), Vector3.down);
-
-            RaycastHit rayLDistHit;
-            RaycastHit rayRDistHit;
-
-            Physics.Raycast(rayLDist, out rayLDistHit, Mathf.Infinity, layerMask);
-            Physics.Raycast(rayRDist, out rayRDistHit, Mathf.Infinity, layerMask);
-
-            bodyDisp = Mathf.Abs(rayLDistHit.distance - rayRDistHit.distance) / 2f;
-
-            Debug.Log(rayLDistHit.distance + "  L       R  " + rayRDistHit.distance);
-            transform.localPosition = bodyRootPos - (Vector3.up * bodyDisp);
-
         }
 
+        // Right Foot
+        animator.SetIKPositionWeight(AvatarIKGoal.RightFoot, animator.GetFloat("IKRightFootWeight"));
+        animator.SetIKRotationWeight(AvatarIKGoal.RightFoot, animator.GetFloat("IKRightFootWeight"));
+        animator.SetIKHintPositionWeight(AvatarIKHint.RightKnee, 1f);
+
+        RaycastHit hitR;
+        Ray rayR = new Ray(animator.GetIKPosition(AvatarIKGoal.RightFoot) + Vector3.up, Vector3.down);
+
+        bool rFloored = Physics.Raycast(rayR, out hitR, distanceToGround + 1f, layerMask);
+        if (rFloored)
+        {
+            if (hitR.transform.tag == "walkable")
+            {
+                Vector3 forward = Vector3.ProjectOnPlane(-rFoot.transform.forward, hitR.normal);
+                Vector3 footPosition = hitR.point;
+                footPosition.y += distanceToGround;
+
+                animator.SetIKHintPosition(AvatarIKHint.RightKnee, rKnee.transform.position);
+
+                animator.SetIKPosition(AvatarIKGoal.RightFoot, footPosition);
+
+                animator.SetIKRotation(AvatarIKGoal.RightFoot, Quaternion.LookRotation(forward, hitR.normal));
+
+                animator.SetFloat("IKRightFootWeight", 1f / hitR.distance);
+            }
+        }
+        // FIX, current has a ray for each foot starting at a fixed y pos to get the ground distance at each foot
+
+        Ray rayLDist = new Ray(new Vector3(lFoot.transform.position.x, 1f, lFoot.transform.position.z), Vector3.down);
+        Ray rayRDist = new Ray(new Vector3(rFoot.transform.position.x, 1f, rFoot.transform.position.z), Vector3.down);
+
+        RaycastHit rayLDistHit;
+        RaycastHit rayRDistHit;
+
+        Physics.Raycast(rayLDist, out rayLDistHit, Mathf.Infinity, layerMask);
+        Physics.Raycast(rayRDist, out rayRDistHit, Mathf.Infinity, layerMask);
+
+        bodyDisp = Mathf.Abs(rayLDistHit.distance - rayRDistHit.distance) / 2f;
+        transform.localPosition = bodyRootPos - (Vector3.up * bodyDisp);
+        
     }
+        
 }
